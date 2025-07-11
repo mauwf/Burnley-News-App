@@ -1,0 +1,3 @@
+Read the latest news about Burnley Football Club from various sources, all in one place.
+
+This app aggregates articles from the Lancashire Telegraph, The Guardian, and more. All stories are sorted by date, and you can click on any story to read the full article in your web browser.
