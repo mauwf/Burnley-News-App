@@ -6,23 +6,29 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <!-- Header TextView with Claret and Blue colors -->
+    <!-- Header TextView referencing a string resource -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#660033"
         android:gravity="center"
         android:padding="16dp"
-        android:text="Burnley FC News"
+        android:text="@string/app_header"
         android:textColor="#ADD8E6"
         android:textSize="20sp"
         android:textStyle="bold" />
 
-    <!-- The RecyclerView will display our list of news articles. -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/newsRecyclerView"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:listitem="@layout/list_item_news" />
+        android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/newsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:listitem="@layout/list_item_news" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </LinearLayout>
