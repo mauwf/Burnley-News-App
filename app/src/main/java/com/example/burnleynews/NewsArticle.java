@@ -1,6 +1,7 @@
 package com.example.burnleynews;
 
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * A simple data class (POJO) to hold the information for a single news article.
@@ -9,56 +10,65 @@ public class NewsArticle {
     private String title;
     private String link;
     private String description;
-    private Date pubDate; // Field to store the publication date
-    private String source; // Field to store the news source
+    private Date pubDate;
+    private String source;
 
-    // Getter for the article title
     public String getTitle() {
         return title;
     }
 
-    // Setter for the article title
     public void setTitle(String title) {
         this.title = title;
     }
 
-    // Getter for the article link
     public String getLink() {
         return link;
     }
 
-    // Setter for the article link
     public void setLink(String link) {
         this.link = link;
     }
 
-    // Getter for the article description
     public String getDescription() {
         return description;
     }
 
-    // Setter for the article description
     public void setDescription(String description) {
         this.description = description;
     }
 
-    // Getter for the publication date
     public Date getPubDate() {
         return pubDate;
     }
 
-    // Setter for the publication date
     public void setPubDate(Date pubDate) {
         this.pubDate = pubDate;
     }
 
-    // Getter for the source
     public String getSource() {
         return source;
     }
 
-    // Setter for the source
     public void setSource(String source) {
         this.source = source;
+    }
+
+    // Overriding equals and hashCode is necessary for DiffUtil to correctly
+    // detect when the content of an item has changed.
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NewsArticle that = (NewsArticle) o;
+        return Objects.equals(title, that.title) &&
+                Objects.equals(link, that.link) &&
+                Objects.equals(description, that.description) &&
+                Objects.equals(pubDate, that.pubDate) &&
+                Objects.equals(source, that.source);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(title, link, description, pubDate, source);
     }
 }

@@ -5,6 +5,7 @@ import android.text.Html;
 import android.util.Log;
 import android.util.Xml;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -22,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
 
-    // Using a Map to associate URLs with friendly source names.
     private static final Map<String, String> RSS_FEEDS = new LinkedHashMap<>() {{
         put("https://www.lancashiretelegraph.co.uk/sport/football/burnley_fc/rss/", "Lancashire Telegraph");
         put("https://www.uptheclarets.com/feed", "Up The Clarets");
@@ -42,7 +43,6 @@ public class MainActivity extends AppCompatActivity {
     private NewsAdapter adapter;
     private final List<NewsArticle> articleList = new ArrayList<>();
     private SwipeRefreshLayout swipeRefreshLayout;
-    // Create a single-thread executor to handle background tasks.
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Override
@@ -58,22 +58,18 @@ public class MainActivity extends AppCompatActivity {
         adapter = new NewsAdapter(articleList);
         recyclerView.setAdapter(adapter);
 
-        // Set the listener for the swipe-to-refresh action using a method reference.
         swipeRefreshLayout.setOnRefreshListener(this::fetchNews);
 
-        // Fetch the news for the first time
         fetchNews();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Shut down the executor when the activity is destroyed to prevent leaks.
         executor.shutdown();
     }
 
     private void fetchNews() {
-        // Show the refresh indicator
         swipeRefreshLayout.setRefreshing(true);
         executor.execute(() -> {
             List<NewsArticle> allParsedArticles = new ArrayList<>();
@@ -88,20 +84,21 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
+            // Sort the newly fetched articles before calculating the difference
+            allParsedArticles.sort((o1, o2) -> {
+                if (o1.getPubDate() == null || o2.getPubDate() == null) return 0;
+                return o2.getPubDate().compareTo(o1.getPubDate());
+            });
+
             runOnUiThread(() -> {
-                articleList.clear();
-                articleList.addAll(allParsedArticles);
+                // Use DiffUtil to calculate the changes and update the adapter efficiently
+                final NewsDiffCallback diffCallback = new NewsDiffCallback(this.articleList, allParsedArticles);
+                final DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffCallback);
 
-                // Use List.sort (available from API 24)
-                articleList.sort((o1, o2) -> {
-                    if (o1.getPubDate() == null || o2.getPubDate() == null) return 0;
-                    return o2.getPubDate().compareTo(o1.getPubDate());
-                });
+                this.articleList.clear();
+                this.articleList.addAll(allParsedArticles);
+                diffResult.dispatchUpdatesTo(adapter);
 
-                // While notifyDataSetChanged works, for optimal performance in a production app,
-                // consider using DiffUtil to calculate and dispatch more specific list updates.
-                adapter.notifyDataSetChanged();
-                // Hide the refresh indicator now that the data is loaded
                 swipeRefreshLayout.setRefreshing(false);
             });
         });
@@ -134,18 +131,16 @@ public class MainActivity extends AppCompatActivity {
                 case XmlPullParser.END_TAG:
                     if (currentArticle != null) {
                         if (tagName.equalsIgnoreCase("title")) {
-                            // Use the modern Html.fromHtml and clean the object replacement character.
                             String decodedTitle = Html.fromHtml(text, Html.FROM_HTML_MODE_LEGACY).toString();
                             String cleanedTitle = decodedTitle.replace("￼", "").trim();
                             currentArticle.setTitle(cleanedTitle);
                         } else if (tagName.equalsIgnoreCase("link")) {
                             currentArticle.setLink(text);
                         } else if (tagName.equalsIgnoreCase("description")) {
-                            // Use the modern Html.fromHtml and clean unwanted characters.
                             String decodedDescription = Html.fromHtml(text, Html.FROM_HTML_MODE_LEGACY).toString();
                             String cleanedDescription = decodedDescription
                                     .replace("[&#8230;]", "...")
-                                    .replace("￼", "") // Remove the object replacement character
+                                    .replace("￼", "")
                                     .trim();
                             currentArticle.setDescription(cleanedDescription);
                         } else if (tagName.equalsIgnoreCase("pubDate")) {
@@ -166,5 +161,38 @@ public class MainActivity extends AppCompatActivity {
             eventType = parser.next();
         }
         return articles;
+    }
+
+    // Inner class to handle the DiffUtil logic
+    private static class NewsDiffCallback extends DiffUtil.Callback {
+        private final List<NewsArticle> oldList;
+        private final List<NewsArticle> newList;
+
+        NewsDiffCallback(List<NewsArticle> oldList, List<NewsArticle> newList) {
+            this.oldList = oldList;
+            this.newList = newList;
+        }
+
+        @Override
+        public int getOldListSize() {
+            return oldList.size();
+        }
+
+        @Override
+        public int getNewListSize() {
+            return newList.size();
+        }
+
+        @Override
+        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+            // Use the article link as a unique identifier
+            return Objects.equals(oldList.get(oldItemPosition).getLink(), newList.get(newItemPosition).getLink());
+        }
+
+        @Override
+        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+            // The equals() method in NewsArticle will check if all fields are the same
+            return oldList.get(oldItemPosition).equals(newList.get(newItemPosition));
+        }
     }
 }

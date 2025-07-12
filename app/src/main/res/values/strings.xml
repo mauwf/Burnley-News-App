@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">Burnley News</string>
+
+    <!-- Add this line for the header -->
+    <string name="app_header">Burnley FC News</string>
 </resources>
