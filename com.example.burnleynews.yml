@@ -1,0 +1,22 @@
+Categories:
+  - News
+License: Apache-2.0
+WebSite: https://github.com/mauwf/Burnley-News-App
+SourceCode: https://github.com/mauwf/Burnley-News-App
+IssueTracker: https://github.com/mauwf/Burnley-News-App/issues
+Changelog: https://github.com/mauwf/Burnley-News-App/releases
+
+
+RepoType: git
+Repo: https://github.com/mauwf/Burnley-News-App.git
+
+Builds:
+  - versionName: '1.0'
+    versionCode: 1
+    commit: '1.0'
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
